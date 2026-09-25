@@ -1,0 +1,28 @@
+{
+  "name": "Buy a field notebook",
+  "steps": [
+    { "label": "Open the product", "action": "visit", "path": "/fixture" },
+    {
+      "label": "Add one notebook",
+      "action": "click",
+      "target": { "role": "button", "name": "Add to basket" }
+    },
+    {
+      "label": "Verify basket total",
+      "action": "text",
+      "target": { "role": "status", "name": "Basket" },
+      "expected": "1 notebook · ₹240"
+    },
+    {
+      "label": "Place the order",
+      "action": "click",
+      "target": { "role": "button", "name": "Place order" }
+    },
+    {
+      "label": "Verify confirmation",
+      "action": "text",
+      "target": { "role": "status", "name": "Order" },
+      "expected": "Order confirmed"
+    }
+  ]
+}

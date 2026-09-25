@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Margin — browser tests, with evidence</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to results</a>
+    <header>
+      <a class="wordmark" href="/">margin<span aria-hidden="true">/</span></a
+      ><span class="descriptor">Browser tests,<br />with evidence.</span
+      ><span class="edition"
+        >FIELD EDITION / 001<br />FLYTBASE · TIRELESS HAND</span
+      >
+    </header>
+    <main id="main">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">Local workspace / Field Supply</p>
+          <h1>Check what<br />actually happened.</h1>
+          <p class="lede">
+            A working browser journey. A record you can inspect.
+          </p>
+        </div>
+        <aside class="scope">
+          <span class="eyebrow">Foundation build</span>
+          <p>
+            Deterministic checkout is ready.<br />Generation and repair are
+            next.
+          </p>
+          <span class="small">No API key required for this version.</span>
+        </aside>
+      </section>
+      <section class="toolbar" aria-label="Run controls">
+        <div>
+          <label for="scenario">Test condition</label
+          ><select id="scenario">
+            <option value="baseline">Working checkout</option>
+            <option value="false-success">Success screen, missing order</option>
+          </select>
+        </div>
+        <button id="run">Run checkout <span aria-hidden="true">↗</span></button>
+        <p id="status" role="status" aria-live="polite">
+          Ready to run locally.
+        </p>
+      </section>
+      <section class="results">
+        <div class="journey">
+          <div class="section-heading">
+            <h2>Journey record</h2>
+            <span id="outcome" class="outcome">Not run</span>
+          </div>
+          <h3>Buy a field notebook</h3>
+          <p class="small">Hand-authored baseline · Chromium</p>
+          <ol id="steps">
+            <li class="empty">
+              Run checkout to collect a real execution record.
+            </li>
+          </ol>
+        </div>
+        <div class="evidence">
+          <div class="section-heading">
+            <h2>Evidence</h2>
+            <span class="small">Final browser state</span>
+          </div>
+          <div id="evidence-empty" class="empty evidence-empty">
+            The browser capture will appear here.<br />No sample results or
+            simulated metrics.
+          </div>
+          <img
+            id="capture"
+            alt="Final browser state captured during the selected checkout run"
+            hidden
+          />
+          <div id="proof" hidden>
+            <a id="trace">Download trace</a>
+            <p class="small">
+              Open locally:
+              <code>npx playwright show-trace &lt;downloaded-file&gt;</code>
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="ledger" aria-label="Execution metrics">
+        <div><span>Elapsed</span><strong id="duration">—</strong></div>
+        <div><span>Model requests</span><strong id="calls">—</strong></div>
+        <div><span>Run reference</span><strong id="reference">—</strong></div>
+        <div><span>Learning mode</span><strong>Not implemented</strong></div>
+      </section>
+      <section class="history">
+        <div class="section-heading">
+          <h2>Earlier runs</h2>
+          <span class="small">Saved locally across restarts</span>
+        </div>
+        <div id="history" class="small">No runs yet.</div>
+      </section>
+      <footer>
+        <span>Margin / inspect before you trust.</span
+        ><span>Local foundation · no cloud hosting</span>
+      </footer>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

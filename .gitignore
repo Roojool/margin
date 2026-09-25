@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+runs/
+memory/
+auth/
+auth.json
+*.db
+*.db-*
+test-results/
+playwright-report/
+output/
+.playwright-cli/
+dist/
+*.log
