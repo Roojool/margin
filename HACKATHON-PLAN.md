@@ -38,6 +38,11 @@ No additional target or rules have been supplied yet. An organizer app or late t
 | Learned revisions and business classification | Not implemented |
 | Cross-app evaluation and cancellation | Not implemented |
 
+Public repository: https://github.com/Roojool/margin. Local verification passes.
+The GitHub Actions template is stored at `docs/ci-workflow.yml`; it is not active
+because the current GitHub login cannot upload workflow files. Enabling CI can
+wait until a workflow-authorized login is available.
+
 Run `npm run verify` to verify the current foundation. The integration check proves a valid checkout passes, a confirmation without a stored order fails, a subsequent clean run passes, history survives restart, and invalid/cross-origin requests are rejected. It does not prove autonomous testing.
 
 ## Why this scope

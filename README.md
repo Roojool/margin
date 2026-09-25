@@ -4,6 +4,8 @@
 
 A local-first browser-testing project for the [FlytBase Tireless Hand hackathon](https://luma.com/i8uw5na7).
 
+Public repository: [Roojool/margin](https://github.com/Roojool/margin).
+
 The intended product learns a journey, replays it cheaply, and remembers validated repairs. **This repository currently contains the deterministic foundation, not the completed autonomous agent.**
 
 ## Start
@@ -70,6 +72,13 @@ The intended first project allowance is $10, with bounded input/output, request 
 One local user, one browser run at a time, one controlled target. No remote authentication,
 payments, deployment, universal site crawling, or production security guarantee.
 An unfamiliar app needs its own acceptance criteria and safe reset/verification setup.
+
+## Automated checks
+
+`npm run verify` runs locally without API access. A GitHub Actions template is
+saved at `docs/ci-workflow.yml`. It is **not active**: the current GitHub login
+lacks permission to upload workflow files. To enable CI later, use a login with
+workflow-write permission and move that file to `.github/workflows/check.yml`.
 
 ## License
 
