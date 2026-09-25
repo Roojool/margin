@@ -6,16 +6,19 @@ Open this `margin` directory, not its parent. Read AGENTS.md and run
 ## Existing foundation
 
 The deterministic checkout, false-success detection, trace/screenshot artifacts,
-persisted run history, and real UI exist. Do not rebuild them. The baseline
-journey is hand-authored. No AI generation, healing, model usage gateway, repair
-memory, cancellation, or external target support is implemented yet.
+persisted run history, and real UI exist. Milestone A added an offline-tested
+semantic observer and bounded model gateway. The baseline journey is hand-authored.
+No AI generation, healing, repair memory, cancellation, or external target support
+is implemented yet. Live model access remains unverified.
 
 The owner approved OpenAI runtime usage. Keep Antigravity for implementation and
 Codex for review. Public source must not include the owner's API key or browser
 artifacts. A previously shared credential must be replaced locally before any
 live request. Do not ask for its value in chat.
 
-## First prompt to paste
+## Completed Milestone A prompt (archive)
+
+The next implementation prompt is **Milestone B** in HACKATHON-PLAN.md.
 
 ```text
 Read AGENTS.md, README.md, HACKATHON-PLAN.md, docs/HOW-IT-WORKS.md, and

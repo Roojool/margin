@@ -32,11 +32,12 @@ No additional target or rules have been supplied yet. An organizer app or late t
 | Real screenshot, trace, duration, execution records | Implemented |
 | Run history surviving restart | Implemented; not learned repair memory |
 | Working run/evidence UI | Implemented |
-| Natural-language test generation | Not implemented |
-| OpenAI gateway and enforced cost budget | Not implemented |
-| Locator or sequence repair | Not implemented |
-| Learned revisions and business classification | Not implemented |
-| Cross-app evaluation and cancellation | Not implemented |
+| Compact semantic observation (Playwright ARIA) | Implemented (Milestone A) |
+| OpenAI gateway and local cost guard | Implemented (Milestone A); live access unverified |
+| Natural-language test generation | Not implemented (Milestone B) |
+| Locator or sequence repair | Not implemented (Milestones C & D) |
+| Learned revisions and business classification | Not implemented (Milestones C & D) |
+| Cross-app evaluation and cancellation | Not implemented (Milestone E) |
 
 Public repository: https://github.com/Roojool/margin. Local verification passes.
 The GitHub Actions template is stored at `docs/ci-workflow.yml`; it is not active
@@ -93,7 +94,7 @@ Before a later live model test, copy `.env.example` to `.env` and add a NEW Open
 
 The proposed model is documented at [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna); verify [current pricing](https://developers.openai.com/api/docs/pricing) for the exact model, context band, and service tier. Prefer ordinary short-context requests with compact observations. Test Luna first; switch to Sol only if evaluation justifies the additional cost. Do not claim either model's quality before testing.
 
-The `.env.example` budget fields are currently requirements, not functioning guards. Implement a persistent usage ledger, pre-call conservative reservation, input/output/request caps, and bounded retries. Record actual usage when returned. Unknown pricing or insufficient remaining budget must block live calls. Local estimates do not guarantee an account-wide spending cap; other tools and delayed provider accounting can differ.
+The gateway now enforces the configured project allowance, input/output limits, and at most two retries per call. It persists a reservation for every allowed attempt before calling the model, retains unresolved holds across restart, and records returned usage. The discovery and repair call limits in `.env.example` await their respective milestones. Unknown pricing or insufficient remaining budget blocks live calls. Local estimates do not guarantee an account-wide spending cap; other tools and delayed provider accounting can differ.
 
 ## Remaining build milestones and copy-paste prompts
 
