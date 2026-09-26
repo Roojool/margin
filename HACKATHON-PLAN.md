@@ -34,9 +34,11 @@ No additional target or rules have been supplied yet. An organizer app or late t
 | Working run/evidence UI | Implemented |
 | Compact semantic observation (Playwright ARIA) | Implemented (Milestone A) |
 | OpenAI gateway and local cost guard | Implemented (Milestone A); live access unverified |
-| Natural-language test generation | Not implemented (Milestone B) |
+| Fixture checkout generation & exploration | Implemented (Milestone B); live access unverified |
+| Clean state reset & offline validation replay | Implemented (Milestone B) |
+| Validated revision store & restart replay | Implemented (Milestone B) |
 | Locator or sequence repair | Not implemented (Milestones C & D) |
-| Learned revisions and business classification | Not implemented (Milestones C & D) |
+| Learned candidate ranking & business classification | Not implemented (Milestones C & D) |
 | Cross-app evaluation and cancellation | Not implemented (Milestone E) |
 
 Public repository: https://github.com/Roojool/margin. Local verification passes.
@@ -44,7 +46,7 @@ The GitHub Actions template is stored at `docs/ci-workflow.yml`; it is not activ
 because the current GitHub login cannot upload workflow files. Enabling CI can
 wait until a workflow-authorized login is available.
 
-Run `npm run verify` to verify the current foundation. The integration check proves a valid checkout passes, a confirmation without a stored order fails, a subsequent clean run passes, history survives restart, and invalid/cross-origin requests are rejected. It does not prove autonomous testing.
+Run `npm run verify` to verify the current fixture flow. Offline generation tests use a scripted model transport and prove that the generated checkout replays after restart, while omitted assertions cannot activate a revision. Live model quality and account access remain unverified.
 
 ## Why this scope
 
@@ -88,13 +90,13 @@ npm run verify
 npm run dev
 ```
 
-Open http://127.0.0.1:4173. No key is needed for this foundation.
+Open http://127.0.0.1:4173. Replay needs no key; fixture generation needs configured API access.
 
 Before a later live model test, copy `.env.example` to `.env` and add a NEW OpenAI key locally. Never use a previously exposed credential. Never print keys or send .env content to coding assistants. Do not commit run evidence from private targets. Ensure credit and key expiry cover the event; keep auto-reload as the owner configured it.
 
 The proposed model is documented at [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna); verify [current pricing](https://developers.openai.com/api/docs/pricing) for the exact model, context band, and service tier. Prefer ordinary short-context requests with compact observations. Test Luna first; switch to Sol only if evaluation justifies the additional cost. Do not claim either model's quality before testing.
 
-The gateway now enforces the configured project allowance, input/output limits, and at most two retries per call. It persists a reservation for every allowed attempt before calling the model, retains unresolved holds across restart, and records returned usage. The discovery and repair call limits in `.env.example` await their respective milestones. Unknown pricing or insufficient remaining budget blocks live calls. Local estimates do not guarantee an account-wide spending cap; other tools and delayed provider accounting can differ.
+The gateway enforces the configured project allowance, input/output limits, and at most two retries per call. It persists a reservation for every allowed attempt before calling the model, retains unresolved holds across restart, and records returned usage. Fixture discovery now enforces `MAX_BROWSER_ACTIONS` and `MAX_DISCOVERY_CALLS`; the repair limit awaits Milestone C. Unknown pricing or insufficient remaining budget blocks live calls. Local estimates do not guarantee an account-wide spending cap; other tools and delayed provider accounting can differ.
 
 ## Remaining build milestones and copy-paste prompts
 

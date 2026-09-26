@@ -25,15 +25,21 @@
           </p>
         </div>
         <aside class="scope">
-          <span class="eyebrow">Foundation build</span>
+          <span class="eyebrow">Milestone B</span>
           <p>
-            Deterministic checkout is ready.<br />Generation and repair are
-            next.
+            Fixture checkout generation & validation.<br />Saved revisions replay with model disabled.
           </p>
-          <span class="small">No API key required for this version.</span>
+          <span class="small">Budget guard active. Replay is offline.</span>
         </aside>
       </section>
       <section class="toolbar" aria-label="Run controls">
+        <div>
+          <label for="journey-select">Journey source</label
+          ><select id="journey-select">
+            <option value="hand-authored">Hand-authored checkout</option>
+            <option value="generated" id="opt-generated" disabled>Generated (not learned yet)</option>
+          </select>
+        </div>
         <div>
           <label for="scenario">Test condition</label
           ><select id="scenario">
@@ -41,7 +47,8 @@
             <option value="false-success">Success screen, missing order</option>
           </select>
         </div>
-        <button id="run">Run checkout <span aria-hidden="true">↗</span></button>
+        <button id="run">Run journey <span aria-hidden="true">↗</span></button>
+        <button id="generate" class="secondary">Generate fixture journey</button>
         <p id="status" role="status" aria-live="polite">
           Ready to run locally.
         </p>
@@ -52,11 +59,11 @@
             <h2>Journey record</h2>
             <span id="outcome" class="outcome">Not run</span>
           </div>
-          <h3>Buy a field notebook</h3>
-          <p class="small">Hand-authored baseline · Chromium</p>
+          <h3 id="journey-name">Buy a field notebook</h3>
+          <p id="journey-source" class="small">Source: Hand-authored baseline · Chromium</p>
           <ol id="steps">
             <li class="empty">
-              Run checkout to collect a real execution record.
+              Run checkout or generate the fixture journey to collect a real execution record.
             </li>
           </ol>
         </div>
@@ -85,9 +92,9 @@
       </section>
       <section class="ledger" aria-label="Execution metrics">
         <div><span>Elapsed</span><strong id="duration">—</strong></div>
-        <div><span>Model requests</span><strong id="calls">—</strong></div>
-        <div><span>Run reference</span><strong id="reference">—</strong></div>
-        <div><span>Learning mode</span><strong>Not implemented</strong></div>
+        <div><span>Replay model calls</span><strong id="calls">—</strong></div>
+        <div><span>Source</span><strong id="source-badge">—</strong></div>
+        <div><span>Cold learning</span><strong id="learning-cost">—</strong></div>
       </section>
       <section class="history">
         <div class="section-heading">

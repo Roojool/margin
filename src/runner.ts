@@ -19,7 +19,17 @@ export type Run = {
   status: "PASS" | "FAIL" | "BLOCKED";
   steps: StepResult[];
   modelCalls: number;
-  source: "hand-authored";
+  source: "hand-authored" | "generated";
+  learningUsage?: {
+    callsCount: number;
+    tokens: {
+      promptTokens: number;
+      completionTokens: number;
+      reasoningTokens?: number;
+      totalTokens: number;
+    };
+    costUsd: number;
+  };
   evidence: boolean;
 };
 
@@ -30,6 +40,10 @@ export async function runJourney(
   output: string,
   verifyOutcome: () => Promise<string>,
   scenario: string,
+  options?: {
+    source?: "hand-authored" | "generated";
+    learningUsage?: Run["learningUsage"];
+  },
 ): Promise<Run> {
   const start = Date.now();
   const run: Run = {
@@ -41,7 +55,8 @@ export async function runJourney(
     status: "BLOCKED",
     steps: [],
     modelCalls: 0,
-    source: "hand-authored",
+    source: options?.source ?? "hand-authored",
+    learningUsage: options?.learningUsage,
     evidence: false,
   };
   const directory = join(output, run.id);

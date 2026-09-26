@@ -4,19 +4,61 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { journeySchema } from "./journey.js";
-import { runJourney } from "./runner.js";
+import { journeySchema, type Journey } from "./journey.js";
+import { runJourney, type Run } from "./runner.js";
+import { JourneyStore } from "./store.js";
+import { generateJourney, BoundedExplorationLimitError, SafeResetUnavailableError } from "./generator.js";
+import { BudgetExceededError, ModelAuthError, type OpenAIGateway } from "./gateway.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
+const fixtureGoal = "Buy a field notebook";
+const fixtureCriteria = [
+  "Add one notebook to basket",
+  "Verify basket total is 1 notebook · ₹240",
+  "Place the order",
+  "Verify order confirmation shows Order confirmed",
+];
+const fixtureScope = { appId: "fixture", environment: "local", contextVersion: "1.0.0" };
 const runRequest = z
-  .object({ variant: z.enum(["baseline", "false-success"]) })
+  .object({
+    variant: z.enum(["baseline", "false-success"]),
+    source: z.enum(["hand-authored", "generated"]).optional().default("hand-authored"),
+  })
   .strict();
-export function createMarginServer(output = join(root, "runs")) {
+
+const generateRequest = z
+  .object({
+    goal: z.string().optional().default(fixtureGoal),
+    criteria: z
+      .array(z.string())
+      .optional()
+      .default(fixtureCriteria),
+  })
+  .strict();
+
+export function createMarginServer(
+  output = join(root, "runs"),
+  memoryDir = join(root, "memory"),
+  options?: { gateway?: OpenAIGateway },
+) {
+  const store = new JourneyStore(memoryDir);
   // ponytail: one process/run and in-memory fixture data; isolate fixture sessions before concurrent execution.
   let busy = false;
   let variant = "baseline";
   let quantity = 0;
   let orders: { product: string; quantity: number; total: number }[] = [];
+  const verifyFixtureOutcome = async (journey: Journey) => {
+    const required = journeySchema.parse(JSON.parse(
+      await readFile(join(root, "fixture/checkout.json"), "utf8"),
+    ));
+    const withoutLabels = (steps: Journey["steps"]) =>
+      steps.map(({ label: _label, ...step }) => step);
+    assert.deepEqual(withoutLabels(journey.steps), withoutLabels(required.steps),
+      "Generated journey must preserve every fixture action and original assertion");
+    assert.deepEqual(orders, [{ product: "field-notebook", quantity: 1, total: 240 }],
+      "Expected exactly one persisted order for 1 notebook at ₹240; confirmation alone is insufficient.");
+    return "All fixture assertions and exactly one stored field-notebook order verified";
+  };
   const server = createServer(async (req, res) => {
     const port = (server.address() as { port: number }).port;
     const origin = `http://127.0.0.1:${port}`;
@@ -97,6 +139,94 @@ export function createMarginServer(output = join(root, "runs")) {
         res.end(bytes);
         return;
       }
+      if (req.method === "GET" && path === "/api/journeys") {
+        const activeGen = await store.getActiveRevision("checkout", fixtureScope);
+        send(200, {
+          journeys: [
+            {
+              id: "baseline",
+              name: "Buy a field notebook",
+              source: "hand-authored",
+              path: "/fixture",
+            },
+            ...(activeGen
+              ? [
+                  {
+                    id: "generated",
+                    name: activeGen.journey.name,
+                    source: "generated",
+                    revisionId: activeGen.revisionId,
+                    version: activeGen.version,
+                    status: activeGen.status,
+                    learningUsage: activeGen.learningUsage,
+                  },
+                ]
+              : []),
+          ],
+        });
+        return;
+      }
+      if (req.method === "POST" && path === "/api/generate") {
+        if (!req.headers["content-type"]?.startsWith("application/json")) {
+          send(415, { error: "JSON required" });
+          return;
+        }
+        if (busy) {
+          send(409, { error: "A run or generation is already in progress" });
+          return;
+        }
+        let body = "";
+        for await (const chunk of req) {
+          body += chunk;
+          if (body.length > 2048) {
+            send(413, { error: "Request too large" });
+            return;
+          }
+        }
+        const parsed = generateRequest.safeParse(body ? JSON.parse(body) : {});
+        if (!parsed.success) {
+          send(400, { error: "Invalid generate request options" });
+          return;
+        }
+        if (parsed.data.goal !== fixtureGoal ||
+            JSON.stringify(parsed.data.criteria) !== JSON.stringify(fixtureCriteria)) {
+          send(400, { error: "This fixture currently supports only its published checkout goal and criteria" });
+          return;
+        }
+        if (busy) {
+          send(409, { error: "A run is already in progress" });
+          return;
+        }
+        busy = true;
+        try {
+          const resetHook = async () => {
+            quantity = 0;
+            orders = [];
+            variant = "baseline";
+          };
+          const result = await generateJourney({
+            origin,
+            startPath: "/fixture",
+            goal: parsed.data.goal,
+            acceptanceCriteria: parsed.data.criteria,
+            journeyId: "checkout",
+            resetHook,
+            verifyOutcome: verifyFixtureOutcome,
+            allowedClicks: [
+              { role: "button", name: "Add to basket" },
+              { role: "button", name: "Place order" },
+            ],
+            outputDir: output,
+            memoryDir,
+            gateway: options?.gateway,
+          });
+
+          send(200, result);
+        } finally {
+          busy = false;
+        }
+        return;
+      }
       if (req.method === "POST" && path === "/api/run") {
         if (!req.headers["content-type"]?.startsWith("application/json")) {
           send(415, { error: "JSON required" });
@@ -129,24 +259,39 @@ export function createMarginServer(output = join(root, "runs")) {
           variant = parsed.data.variant;
           quantity = 0;
           orders = [];
-          const journey = journeySchema.parse(
-            JSON.parse(
-              await readFile(join(root, "fixture/checkout.json"), "utf8"),
-            ),
-          );
+
+          let journeyToRun: Journey;
+          let learningUsageForRun: Run["learningUsage"] | undefined;
+
+          if (parsed.data.source === "generated") {
+            const activeGen = await store.getActiveRevision("checkout", fixtureScope);
+            if (!activeGen) {
+              send(400, {
+                error:
+                  "No active generated journey found. Run exploration first.",
+              });
+              return;
+            }
+            journeyToRun = activeGen.journey;
+            learningUsageForRun = activeGen.learningUsage;
+          } else {
+            journeyToRun = journeySchema.parse(
+              JSON.parse(
+                await readFile(join(root, "fixture/checkout.json"), "utf8"),
+              ),
+            );
+          }
+
           const result = await runJourney(
-            journey,
+            journeyToRun,
             origin,
             output,
-            async () => {
-              assert.deepEqual(
-                orders,
-                [{ product: "field-notebook", quantity: 1, total: 240 }],
-                "Expected exactly one persisted order for 1 notebook at ₹240; confirmation alone is insufficient.",
-              );
-              return "Exactly one stored field-notebook order, quantity 1, total ₹240";
-            },
+            () => verifyFixtureOutcome(journeyToRun),
             variant,
+            {
+              source: parsed.data.source,
+              learningUsage: learningUsageForRun,
+            },
           );
           send(200, result);
         } finally {
@@ -180,10 +325,19 @@ export function createMarginServer(output = join(root, "runs")) {
       send(404, { error: "Not found" });
     } catch (error) {
       if (!res.headersSent)
-        send(error instanceof SyntaxError ? 400 : 500, {
+        send(error instanceof SyntaxError ? 400 :
+          error instanceof BoundedExplorationLimitError ||
+          error instanceof SafeResetUnavailableError ||
+          error instanceof BudgetExceededError ||
+          error instanceof ModelAuthError ? 422 : 500, {
           error:
             error instanceof SyntaxError
               ? "Invalid JSON"
+              : error instanceof BoundedExplorationLimitError ||
+                error instanceof SafeResetUnavailableError ||
+                error instanceof BudgetExceededError ||
+                error instanceof ModelAuthError
+              ? error.message
               : "Local operation failed; see terminal",
         });
       else res.end();

@@ -32,6 +32,14 @@ button {
 button:hover {
   background: #193b9f;
 }
+button.secondary {
+  background: transparent;
+  color: var(--blue);
+  border: 1px solid var(--blue);
+}
+button.secondary:hover {
+  background: #ebeef8;
+}
 button:disabled {
   opacity: 0.55;
   cursor: wait;

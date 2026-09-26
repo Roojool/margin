@@ -19,9 +19,9 @@ npm run verify
 npm run dev
 ```
 
-Open **http://127.0.0.1:4173**. Choose **Working checkout**, then **Run checkout**. Next choose **Success screen, missing order** and run again. The second run must fail even though the browser shows a confirmation.
+Open **http://127.0.0.1:4173**. Choose **Working checkout**, then **Run journey**. Next choose **Success screen, missing order** and run again. The second run must fail even though the browser shows a confirmation.
 
-No account, API key, or paid service is needed for this foundation. The server only listens on loopback. Keep the terminal running; Ctrl+C stops it.
+Replay and offline checks need no account, API key, or paid service. Generating a journey through the UI needs a configured OpenAI key. The server only listens on loopback. Keep the terminal running; Ctrl+C stops it.
 
 ## What works today
 
@@ -31,15 +31,21 @@ No account, API key, or paid service is needed for this foundation. The server o
 - Persisted execution records, a final screenshot, and a Playwright trace.
 - A working evidence interface with run history, errors, measured duration, and model-call count.
 - Compact semantic observation extracting role, accessible name, semantic scope, state, and ephemeral references using Playwright's accessibility snapshot.
-- An OpenAI gateway with structured outputs, schema validation, a pre-call reservation for all allowed attempts, and bounded input/output/retries.
-- A persistent local usage ledger recording returned token usage and estimated cost. Unresolved requests keep a budget hold across restarts.
-- A standalone API smoke command (`npm run smoke:api`) that fails clearly without a key and never runs during tests, CI, or server startup.
-- Focused offline checks for checkout execution, observer parsing, budget exhaustion, model refusal, schema invalidation, and ledger persistence.
+- An OpenAI gateway with structured outputs, schema validation, pre-call budget reservation, and bounded requests/output/retries.
+- A persistent local usage ledger recording token usage and cost. Unresolved requests keep a budget hold across restarts.
+- Standalone API smoke command (`npm run smoke:api`) failing clearly without a key and never running during tests, CI, or server startup.
+- Bounded fixture checkout generation (`src/generator.ts`) using semantic observations, with at most 20 actions and 8 model calls. The public UI uses the fixture's fixed goal and criteria.
+- Mandatory browser and application state reset before validation; reports limitation if safe reset is unavailable.
+- Deterministic validation replay with model disabled (0 model calls) and outcome verification.
+- Versioned memory store (`src/store.ts`) preserving activated journey files and scoping active replay to app, environment, and context version.
+- Distinct tracking and UI presentation of cold learning usage vs deterministic warm replay.
+- UI source distinction (hand-authored vs generated) tested on Chromium across desktop and narrow layouts.
+- Offline checks for execution, gateway, observation, generator limits, assertion preservation, and store persistence without live API calls.
 
 ## Still to build
 
-Natural-language test generation and replay (Milestone B), validated locator repair and learned memory (Milestone C),
-sequence repair and business context (Milestone D), repeatable mutation evaluation harness and interface completion (Milestone E).
+Validated locator repair and learned memory candidates (Milestone C), sequence repair around insertion/reordering and business context (Milestone D),
+repeatable mutation evaluation harness and interface completion (Milestone E).
 
 The fixture stores its orders in process memory, independently of the browser. It is a test oracle, not a production database. Run records survive restart; fixture orders deliberately do not. Screenshots show the final page; per-step capture is a later addition.
 
@@ -51,13 +57,15 @@ src/runner.ts          Browser execution, outcome hook, evidence
 src/observer.ts        Compact semantic observation from Playwright accessibility snapshot
 src/gateway.ts         OpenAI gateway, pre-call budget guard, persistent usage accounting
 src/model.ts           Standard server-side model invocation interface
+src/generator.ts       Bounded autonomous test generator and validation runner
+src/store.ts           Versioned journey revisions and memory persistence
 src/smoke.ts           Tiny standalone API smoke check
 src/server.ts          Local HTTP interface, fixture state, run history
 src/main.ts            Entry point
 fixture/              Store page and baseline journey
 ui/                   Product UI; plain HTML/CSS/JavaScript
-tests/                Offline integration, observer, and gateway unit checks
-docs/HANDOFF.md        Milestone A handoff and review prompt
+tests/                Offline integration, observer, gateway, generator, and UI checks
+docs/HANDOFF.md        Milestone handoff and review prompts
 docs/BRAND.md          Design direction and interaction rules
 docs/HOW-IT-WORKS.md   Plain-language walkthrough and architecture
 docs/PRESENTATION.md   Pitch, demo, judging evidence, fallback
@@ -72,11 +80,11 @@ Copy `.env.example` to `.env`, then insert a **new** API key locally. Never past
 
 The configured starting model is `gpt-6-luna`; use `gpt-6-sol` only if measured repair quality requires it. References: [model](https://developers.openai.com/api/docs/models/gpt-6-luna), [pricing](https://developers.openai.com/api/docs/pricing). Unknown models block live calls to prevent unmetered spending.
 
-The project allowance is configurable (default $10, `PROJECT_BUDGET_USD`), with bounded input/output, per-call retries, and a persistent local usage ledger. No automatic paid-provider fallback. Once that allowance is exhausted, AI work is blocked while deterministic replay remains available. The gateway runs only when explicitly called; the UI still uses the hand-authored journey. Interrupted or usage-unknown requests retain a budget hold until manually reconciled. A local estimate is an application safety guard, not a provider-side billing cap. Live connectivity has not been verified here; test it with `npm run smoke:api` after configuring a new key.
+The project allowance is configurable (default $10, `PROJECT_BUDGET_USD`), with bounded input/output, per-call retries, and a persistent local usage ledger. No automatic paid-provider fallback. Once that allowance is exhausted, AI work is blocked while deterministic replay remains available. The UI can generate the fixture checkout after a key is configured; hand-authored and saved generated journeys replay offline. Interrupted or usage-unknown requests retain a budget hold until manually reconciled. A local estimate is an application safety guard, not a provider-side billing cap. Live connectivity has not been verified here; test it with `npm run smoke:api` after configuring a new key.
 
 ## Limits
 
-One local user, one browser run at a time, one controlled target. No remote authentication,
+One local user, one browser run at a time, one loopback fixture target. Custom goals and criteria need their own independent verifier and action policy. No remote authentication,
 payments, deployment, universal site crawling, or production security guarantee.
 An unfamiliar app needs its own acceptance criteria and safe reset/verification setup.
 
