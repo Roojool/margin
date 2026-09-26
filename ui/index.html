@@ -25,9 +25,9 @@
           </p>
         </div>
         <aside class="scope">
-          <span class="eyebrow">Milestone B</span>
+          <span class="eyebrow">Milestone C</span>
           <p>
-            Fixture checkout generation & validation.<br />Saved revisions replay with model disabled.
+            Verified locator repair & learned memory.<br />Saved alternatives replay with model disabled.
           </p>
           <span class="small">Budget guard active. Replay is offline.</span>
         </aside>
@@ -45,6 +45,10 @@
           ><select id="scenario">
             <option value="baseline">Working checkout</option>
             <option value="false-success">Success screen, missing order</option>
+            <option value="id-mutation">ID/class change (safe, 0 healing)</option>
+            <option value="name-mutation">Accessible name change (repair eligible)</option>
+            <option value="ambiguous-mutation">Ambiguous controls (safe block)</option>
+            <option value="wrong-action-mutation">Clickable wrong action (rejected)</option>
           </select>
         </div>
         <button id="run">Run journey <span aria-hidden="true">↗</span></button>
@@ -76,6 +80,24 @@
             The browser capture will appear here.<br />No sample results or
             simulated metrics.
           </div>
+          <div id="repair-card" class="repair-evidence" hidden>
+            <div class="repair-header">
+              <span class="eyebrow" id="repair-heading">Locator repair attempt</span>
+              <span id="repair-tier" class="small"></span>
+            </div>
+            <p id="repair-detail" class="small"></p>
+            <div class="repair-comparison">
+              <div>
+                <span class="small">Original target</span>
+                <code id="repair-original"></code>
+              </div>
+              <div class="repair-arrow" aria-hidden="true">→</div>
+              <div>
+                <span class="small">Repaired target</span>
+                <code id="repair-repaired"></code>
+              </div>
+            </div>
+          </div>
           <img
             id="capture"
             alt="Final browser state captured during the selected checkout run"
@@ -92,7 +114,7 @@
       </section>
       <section class="ledger" aria-label="Execution metrics">
         <div><span>Elapsed</span><strong id="duration">—</strong></div>
-        <div><span>Replay model calls</span><strong id="calls">—</strong></div>
+        <div><span>Run model calls</span><strong id="calls">—</strong></div>
         <div><span>Source</span><strong id="source-badge">—</strong></div>
         <div><span>Cold learning</span><strong id="learning-cost">—</strong></div>
       </section>

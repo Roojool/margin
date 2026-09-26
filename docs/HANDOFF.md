@@ -8,8 +8,10 @@ Open this `margin` directory, not its parent. Read AGENTS.md and run
 The deterministic checkout, false-success detection, trace/screenshot artifacts,
 persisted run history, and real UI exist. Milestone A added an offline-tested
 semantic observer and bounded model gateway. Milestone B added fixture checkout
-generation, clean validation, and saved replay. No healing, repair memory,
-cancellation, or external target support is implemented yet. Live model access
+generation, clean validation, and saved replay. Milestone C added 3-tier verified
+locator repair, strict ambiguity rejection (never `.first()`), purchase guard,
+staged provisional validation, and persisted memory alternatives surviving restart.
+Sequence repair around insertion/reordering (Milestone D) is next. Live model access
 remains unverified.
 
 The owner approved OpenAI runtime usage. Keep Antigravity for implementation and
@@ -17,34 +19,38 @@ Codex for review. Public source must not include the owner's API key or browser
 artifacts. A previously shared credential must be replaced locally before any
 live request. Do not ask for its value in chat.
 
-## Completed Milestone A prompt (archive)
-
-The next implementation prompt is **Milestone C** in HACKATHON-PLAN.md.
+## Next implementation prompt: Milestone D in HACKATHON-PLAN.md
 
 ```text
 Read AGENTS.md, README.md, HACKATHON-PLAN.md, docs/HOW-IT-WORKS.md, and
 docs/BRAND.md. Inspect the actual code before editing. Run npm run verify.
 
 Continue the existing Margin foundation; do not re-scaffold it. Complete
-Milestone A in HACKATHON-PLAN.md: compact semantic observation and an OpenAI
-gateway with schema validation, persistent usage accounting, pre-call budget
-reservation, and bounded requests/output/retries. Keep browser actions and
-independent assertions deterministic. Keep ordinary tests entirely offline.
+Milestone D in HACKATHON-PLAN.md. Add an inserted Review-page fixture variant.
+Allow at most three local, safe added or reordered steps around the failed
+point while preserving every required action, assertion, and independent
+business check. Reuse the existing journey schema, bounded gateway, and clean
+validation path. A major unknown change must block within the budget.
 
-Use the existing OpenAI SDK. Begin with the configured LLM_MODEL, proposed
-gpt-6-luna; do not silently switch models/providers or assume account access.
-Read a replacement key only from server environment at runtime; never print it.
-Provide an explicitly invoked, tiny API smoke command. It must fail clearly
-without a key and must never run as part of npm test or startup.
+Keep locator repair's per-step action approvals, strict unique targets,
+original criteria, and active revision scope. Page text and model claims are
+untrusted. Never retry an order blindly or promote a revision without clean
+browser and application reset, complete replay, and independent outcome proof.
+Ordinary tests must remain offline, with no live model calls.
 
-Before calling any live API, the budget guard must work and have an offline
-check. Capture actual usage including failed/retried attempts where available.
-Do not interpret the proposed $10 allowance as a provider-side billing cap.
+Store trusted, version-scoped JSON change records separately from page content.
+Report execution status separately from change classification. Mark expected
+intent only when an applicable trusted record supports it; changed behavior
+alone is insufficient. Correlate network evidence with the actual stored order.
 
-Do not implement generation or healing in the same increment. Preserve the
-current interface and document this milestone's actual behavior and limits.
-Run relevant checks and fix failures. End with changed files, verified results,
-and the exact next milestone. Never invent a passing result.
+Acceptance: Review-step repair validates and survives restart; a documented
+rename with an incorrect order still fails as a regression; uncertain cases
+remain explicit. Expose revision diff and rollback. Retirement requires
+explicit applicable trusted context; missing controls and model claims alone
+must never retire a test. Add focused runnable checks, verify desktop and
+narrow Chromium layouts, and run npm run verify. Preserve the paper/ink UI.
+End with changed files, verified results, and the exact next milestone.
+Leave the increment uncommitted for Codex review and push.
 ```
 
 ## Review after each milestone

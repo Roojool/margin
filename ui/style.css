@@ -261,6 +261,39 @@ ol li {
 #proof a {
   font-size: 12px;
 }
+.repair-evidence {
+  border: 1px solid var(--line);
+  background: white;
+  padding: 12px 14px;
+  margin: 14px 0;
+}
+.repair-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.repair-header .eyebrow {
+  margin: 0;
+}
+.repair-comparison {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.repair-comparison code {
+  display: block;
+  font: 12px monospace;
+  background: #f5f3ee;
+  padding: 4px 6px;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+.repair-arrow {
+  color: var(--muted);
+  font-size: 16px;
+}
 .ledger {
   display: grid;
   grid-template-columns: 1fr 1fr 1.5fr 1fr;

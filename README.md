@@ -6,7 +6,7 @@ A local-first browser-testing project for the [FlytBase Tireless Hand hackathon]
 
 Public repository: [Roojool/margin](https://github.com/Roojool/margin).
 
-The intended product learns a journey, replays it cheaply, and remembers validated repairs. **This repository currently contains the deterministic foundation, not the completed autonomous agent.**
+The project learns a fixture journey, replays it deterministically, and remembers validated locator repairs. Sequence repair and broader evaluation remain to be built.
 
 ## Start
 
@@ -40,12 +40,19 @@ Replay and offline checks need no account, API key, or paid service. Generating 
 - Versioned memory store (`src/store.ts`) preserving activated journey files and scoping active replay to app, environment, and context version.
 - Distinct tracking and UI presentation of cold learning usage vs deterministic warm replay.
 - UI source distinction (hand-authored vs generated) tested on Chromium across desktop and narrow layouts.
-- Offline checks for execution, gateway, observation, generator limits, assertion preservation, and store persistence without live API calls.
+- Error discrimination distinguishing target outage (BLOCKED), text assertion failure (FAIL), and locator failure without blurring categories.
+- 3-tier locator repair (`src/repair.ts`): (1) saved validated alternatives scoped to the active revision, (2) ranked observed candidates approved for the failed step, and (3) model selection with at most two requests and no retries. Similarity only orders candidates; it is not confidence.
+- Ambiguity rejection enforcing strict mode across all locator operations without hiding ambiguity via `.first()`.
+- Code enforcement of origin restrictions, exact per-step action approval, and unique-target checks (`count === 1`).
+- Purchase guard preventing blind repeated clicks on completed purchase/order steps.
+- Staged candidate repair validation: checks immediate action outcome, executes remaining steps, resets application and browser state, and performs clean replay with model disabled before memory promotion.
+- Persisted validated alternatives and active journey revisions in memory store surviving restarts and replaying with 0 model calls.
+- Repair attempt card in the UI displaying original target, proposed target, tier, and activation or rejection status. Successful repair steps and screenshot come from the clean validation replay.
+- Offline checks for execution, gateway, observation, generator limits, assertion preservation, store persistence, and locator repair without live API calls.
 
 ## Still to build
 
-Validated locator repair and learned memory candidates (Milestone C), sequence repair around insertion/reordering and business context (Milestone D),
-repeatable mutation evaluation harness and interface completion (Milestone E).
+Sequence repair around insertion/reordering and business context (Milestone D), repeatable mutation evaluation harness and interface completion (Milestone E).
 
 The fixture stores its orders in process memory, independently of the browser. It is a test oracle, not a production database. Run records survive restart; fixture orders deliberately do not. Screenshots show the final page; per-step capture is a later addition.
 
@@ -53,7 +60,8 @@ The fixture stores its orders in process memory, independently of the browser. I
 
 ```text
 src/journey.ts         Validated JSON action contract
-src/runner.ts          Browser execution, outcome hook, evidence
+src/runner.ts          Browser execution, outcome hook, evidence, error discrimination
+src/repair.ts          3-tier verified locator repair and candidate staging validator
 src/observer.ts        Compact semantic observation from Playwright accessibility snapshot
 src/gateway.ts         OpenAI gateway, pre-call budget guard, persistent usage accounting
 src/model.ts           Standard server-side model invocation interface
@@ -64,7 +72,7 @@ src/server.ts          Local HTTP interface, fixture state, run history
 src/main.ts            Entry point
 fixture/              Store page and baseline journey
 ui/                   Product UI; plain HTML/CSS/JavaScript
-tests/                Offline integration, observer, gateway, generator, and UI checks
+tests/                Offline integration, observer, gateway, generator, UI, and repair checks
 docs/HANDOFF.md        Milestone handoff and review prompts
 docs/BRAND.md          Design direction and interaction rules
 docs/HOW-IT-WORKS.md   Plain-language walkthrough and architecture

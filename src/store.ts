@@ -18,6 +18,14 @@ export type LearningUsage = {
   durationMs: number;
 };
 
+export type ValidatedAlternative = {
+  appId: string;
+  original: { role: string; name: string };
+  alternative: { role: string; name: string };
+  verifiedAt: string;
+  revisionId: string;
+};
+
 export type JourneyRevision = {
   revisionId: string;
   journeyId: string;
@@ -51,6 +59,10 @@ export class JourneyStore {
     return join(this.memoryDir, "journeys");
   }
 
+  private alternativesDir(): string {
+    return join(this.memoryDir, "alternatives");
+  }
+
   private safeId(id: string): string {
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error("Invalid journey or revision ID");
     return id;
@@ -59,6 +71,7 @@ export class JourneyStore {
   async init(): Promise<void> {
     await mkdir(this.revisionsDir(), { recursive: true });
     await mkdir(this.journeysDir(), { recursive: true });
+    await mkdir(this.alternativesDir(), { recursive: true });
   }
 
   async saveProvisionalRevision(params: {
@@ -229,6 +242,79 @@ export class JourneyStore {
             revision.status = "SUPERSEDED";
       }
       return revisions.sort((a, b) => b.version - a.version);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+  }
+
+  async saveValidatedAlternative(
+    appId: string,
+    original: { role: string; name: string },
+    alternative: { role: string; name: string },
+    revisionId: string,
+  ): Promise<void> {
+    await this.init();
+    this.safeId(appId);
+    const revision = await this.getRevision(revisionId);
+    if (!revision || revision.status !== "ACTIVE" || revision.appId !== appId ||
+        (await this.getActiveRevision(revision.journeyId))?.revisionId !== revisionId)
+      throw new Error("Alternative requires the current active revision");
+    const filePath = join(this.alternativesDir(), `${appId}.json`);
+    let records: ValidatedAlternative[] = [];
+    try {
+      const data = await readFile(filePath, "utf8");
+      records = JSON.parse(data);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    const exists = records.some(
+      (r) =>
+        r.original.role === original.role &&
+        r.original.name === original.name &&
+        r.alternative.role === alternative.role &&
+        r.alternative.name === alternative.name &&
+        r.revisionId === revisionId,
+    );
+    if (!exists) {
+      records.push({
+        appId,
+        original,
+        alternative,
+        verifiedAt: new Date().toISOString(),
+        revisionId,
+      });
+      await writeFile(filePath, JSON.stringify(records, null, 2), "utf8");
+    }
+  }
+
+  async getValidatedAlternatives(
+    appId: string,
+    original: { role: string; name: string },
+    scope: { environment: string; contextVersion: string },
+    journeyId: string,
+    stepIndex: number,
+    acceptanceCriteria: string[],
+  ): Promise<Array<{ role: string; name: string }>> {
+    this.safeId(appId);
+    const active = await this.getActiveRevision(journeyId, { appId, ...scope });
+    if (!active || JSON.stringify(active.acceptanceCriteria) !== JSON.stringify(acceptanceCriteria)) return [];
+    const filePath = join(this.alternativesDir(), `${appId}.json`);
+    try {
+      const data = await readFile(filePath, "utf8");
+      const records: ValidatedAlternative[] = JSON.parse(data);
+      if (!Array.isArray(records)) throw new Error("Stored alternatives are invalid");
+      return records
+        .filter(
+          (r) =>
+            r?.revisionId === active.revisionId &&
+            r.original.role === original.role &&
+            r.original.name === original.name &&
+            active.journey.steps[stepIndex]?.action === "click" &&
+            active.journey.steps[stepIndex].target.role === r.alternative.role &&
+            active.journey.steps[stepIndex].target.name === r.alternative.name,
+        )
+        .map((r) => r.alternative);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
       throw error;

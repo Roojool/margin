@@ -21,8 +21,20 @@ const fixtureCriteria = [
 const fixtureScope = { appId: "fixture", environment: "local", contextVersion: "1.0.0" };
 const runRequest = z
   .object({
-    variant: z.enum(["baseline", "false-success"]),
+    variant: z.enum([
+      "baseline",
+      "false-success",
+      "id-mutation",
+      "name-mutation",
+      "name-false-success",
+      "ambiguous-mutation",
+      "wrong-action-mutation",
+      "outage",
+      "assertion-failure",
+    ]),
     source: z.enum(["hand-authored", "generated"]).optional().default("hand-authored"),
+    enableRepair: z.boolean().optional().default(true),
+    skipRankedCandidates: z.boolean().optional(),
   })
   .strict();
 
@@ -51,10 +63,28 @@ export function createMarginServer(
     const required = journeySchema.parse(JSON.parse(
       await readFile(join(root, "fixture/checkout.json"), "utf8"),
     ));
-    const withoutLabels = (steps: Journey["steps"]) =>
-      steps.map(({ label: _label, ...step }) => step);
-    assert.deepEqual(withoutLabels(journey.steps), withoutLabels(required.steps),
-      "Generated journey must preserve every fixture action and original assertion");
+    assert.equal(
+      journey.steps.length,
+      required.steps.length,
+      "Generated journey must preserve every fixture action and original assertion",
+    );
+    for (let i = 0; i < required.steps.length; i++) {
+      const step = journey.steps[i]!;
+      const req = required.steps[i]!;
+      assert.equal(step.action, req.action, `Step ${i + 1} action must match`);
+      if (req.action === "visit") {
+        assert.equal((step as any).path, req.path, `Step ${i + 1} visit path must match`);
+      } else if (req.action === "text") {
+        assert.equal((step as any).target.role, req.target.role, `Step ${i + 1} target role must match`);
+        assert.equal((step as any).expected, req.expected, `Step ${i + 1} expected assertion must match`);
+      } else if (req.action === "click") {
+        assert.equal((step as any).target.role, req.target.role, `Step ${i + 1} target role must match`);
+        assert.ok(
+          typeof (step as any).target.name === "string" && (step as any).target.name.length > 0,
+          `Step ${i + 1} target name must be valid`,
+        );
+      }
+    }
     assert.deepEqual(orders, [{ product: "field-notebook", quantity: 1, total: 240 }],
       "Expected exactly one persisted order for 1 notebook at ₹240; confirmation alone is insufficient.");
     return "All fixture assertions and exactly one stored field-notebook order verified";
@@ -86,11 +116,38 @@ export function createMarginServer(
         return;
       }
       const path = new URL(req.url ?? "/", origin).pathname;
+      if (req.method === "GET" && path === "/fixture") {
+        if (variant === "outage") {
+          res.writeHead(500, { "Content-Type": "text/plain" });
+          res.end("Internal Server Error: Target outage");
+          return;
+        }
+        let html = await readFile(join(root, "fixture/index.html"), "utf8");
+        if (variant === "id-mutation") {
+          html = html.replace('id="add"', 'id="add-btn-mutated" class="mutated-btn"');
+        } else if (variant === "name-mutation" || variant === "name-false-success") {
+          html = html.replace('>Add to basket<', '>Add to cart<');
+        } else if (variant === "ambiguous-mutation") {
+          html = html.replace(
+            '<button id="add">Add to basket</button>',
+            '<button id="add">Add to basket</button>\n          <button id="add2">Add to basket</button>',
+          );
+        } else if (variant === "wrong-action-mutation") {
+          html = html.replace(
+            '<button id="add">Add to basket</button>',
+            '<button id="clear">Clear basket</button>',
+          );
+        } else if (variant === "assertion-failure") {
+          html = html.replace('0 notebooks · ₹0', '99 notebooks · ₹999');
+        }
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(html);
+        return;
+      }
       const files: Record<string, [string, string]> = {
         "/": ["ui/index.html", "text/html"],
         "/style.css": ["ui/style.css", "text/css"],
         "/app.js": ["ui/app.js", "text/javascript"],
-        "/fixture": ["fixture/index.html", "text/html"],
         "/fixture.js": ["fixture/app.js", "text/javascript"],
       };
       if (req.method === "GET" && files[path]) {
@@ -246,7 +303,7 @@ export function createMarginServer(
         }
         const parsed = runRequest.safeParse(JSON.parse(body));
         if (!parsed.success) {
-          send(400, { error: "Choose baseline or false-success" });
+          send(400, { error: "Choose a valid test condition scenario" });
           return;
         }
         // Recheck after asynchronous body parsing to prevent overlapping requests.
@@ -262,6 +319,7 @@ export function createMarginServer(
 
           let journeyToRun: Journey;
           let learningUsageForRun: Run["learningUsage"] | undefined;
+          let acceptanceCriteriaForRun = fixtureCriteria;
 
           if (parsed.data.source === "generated") {
             const activeGen = await store.getActiveRevision("checkout", fixtureScope);
@@ -274,6 +332,7 @@ export function createMarginServer(
             }
             journeyToRun = activeGen.journey;
             learningUsageForRun = activeGen.learningUsage;
+            acceptanceCriteriaForRun = activeGen.acceptanceCriteria;
           } else {
             journeyToRun = journeySchema.parse(
               JSON.parse(
@@ -281,6 +340,11 @@ export function createMarginServer(
               ),
             );
           }
+
+          const resetHook = async () => {
+            quantity = 0;
+            orders = [];
+          };
 
           const result = await runJourney(
             journeyToRun,
@@ -291,6 +355,21 @@ export function createMarginServer(
             {
               source: parsed.data.source,
               learningUsage: learningUsageForRun,
+              enableRepair: parsed.data.enableRepair ?? true,
+              appId: "fixture",
+              journeyId: "checkout",
+              environment: fixtureScope.environment,
+              contextVersion: fixtureScope.contextVersion,
+              acceptanceCriteria: acceptanceCriteriaForRun,
+              memoryDir,
+              gateway: options?.gateway,
+              resetHook,
+              skipRankedCandidates: parsed.data.skipRankedCandidates,
+              allowedClicks: [
+                { stepIndex: 1, role: "button", name: "Add to basket" },
+                { stepIndex: 1, role: "button", name: "Add to cart" },
+                { stepIndex: 3, role: "button", name: "Place order" },
+              ],
             },
           );
           send(200, result);
@@ -305,6 +384,10 @@ export function createMarginServer(
           return;
         }
         quantity += 1;
+        if (variant === "assertion-failure") {
+          send(200, { quantity, total: 999 });
+          return;
+        }
         send(200, { quantity, total: quantity * 240 });
         return;
       }
@@ -313,7 +396,7 @@ export function createMarginServer(
           send(409, { error: "Expected one notebook" });
           return;
         }
-        if (variant === "baseline")
+        if (variant !== "false-success" && variant !== "name-false-success")
           orders.push({
             product: "field-notebook",
             quantity,

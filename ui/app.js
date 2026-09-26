@@ -39,6 +39,21 @@ function show(run) {
     get("trace").href = `/artifacts/${run.id}/trace.zip`;
   }
 
+  const repairCard = get("repair-card");
+  if (repairCard) {
+    if (run.repair) {
+      repairCard.hidden = false;
+      get("repair-heading").textContent = run.repair.status === "activated"
+        ? "Verified locator repair" : "Locator repair attempt";
+      get("repair-tier").textContent = `Tier: ${run.repair.tier} (${run.repair.status})`;
+      get("repair-detail").textContent = run.repair.detail;
+      get("repair-original").textContent = `${run.repair.originalTarget.role} "${run.repair.originalTarget.name}"`;
+      get("repair-repaired").textContent = `${run.repair.repairedTarget.role} "${run.repair.repairedTarget.name}"`;
+    } else {
+      repairCard.hidden = true;
+    }
+  }
+
   get("duration").textContent = `${(run.durationMs / 1000).toFixed(2)} s`;
   get("calls").textContent = String(run.modelCalls);
   get("source-badge").textContent = run.source ?? "hand-authored";
@@ -101,7 +116,7 @@ runButton.addEventListener("click", async () => {
   runButton.disabled = true;
   if (generateButton) generateButton.disabled = true;
   get("status").textContent =
-    "Browser running. Replaying journey with model disabled…";
+    "Browser running. Repair may use bounded model calls if a locator fails…";
   try {
     const response = await fetch("/api/run", {
       method: "POST",

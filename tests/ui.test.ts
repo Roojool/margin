@@ -50,6 +50,15 @@ test("UI renders cleanly at desktop and narrow widths and distinguishes sources"
         validationRun: { id: "00000000-0000-0000-0000-000000000000", journey: "Buy a field notebook",
           source: "generated", status: "PASS", steps: [], evidence: false,
           durationMs: 1000, modelCalls: 0,
+          repair: {
+            stepIndex: 1,
+            originalTarget: { role: "button", name: "Add to basket" },
+            repairedTarget: { role: "button", name: "Add to cart" },
+            tier: "ranked-candidate",
+            modelCalls: 0,
+            status: "activated",
+            detail: "Repaired using ranked-candidate",
+          },
           learningUsage: { callsCount: 3, costUsd: 0.01 } } }),
     }));
     await desktopPage.route("**/api/journeys", (route) => route.fulfill({
@@ -61,6 +70,11 @@ test("UI renders cleanly at desktop and narrow widths and distinguishes sources"
     assert.match((await journeySource.textContent()) ?? "", /Generated/);
     assert.match((await desktopPage.locator("#learning-cost").textContent()) ?? "", /3 calls/);
     assert.equal(await journeySelect.inputValue(), "generated");
+
+    const repairCard = desktopPage.locator("#repair-card");
+    assert.equal(await repairCard.isVisible(), true);
+    assert.match((await desktopPage.locator("#repair-original").textContent()) ?? "", /Add to basket/);
+    assert.match((await desktopPage.locator("#repair-repaired").textContent()) ?? "", /Add to cart/);
 
     await desktopContext.close();
 

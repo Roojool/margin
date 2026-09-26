@@ -30,15 +30,16 @@ No additional target or rules have been supplied yet. An organizer app or late t
 | Baseline checkout and false-success fixture | Implemented |
 | Independent stored-order check | Implemented against local fixture state |
 | Real screenshot, trace, duration, execution records | Implemented |
-| Run history surviving restart | Implemented; not learned repair memory |
+| Run history and validated locator alternatives surviving restart | Implemented (Milestones B and C) |
 | Working run/evidence UI | Implemented |
 | Compact semantic observation (Playwright ARIA) | Implemented (Milestone A) |
 | OpenAI gateway and local cost guard | Implemented (Milestone A); live access unverified |
 | Fixture checkout generation & exploration | Implemented (Milestone B); live access unverified |
 | Clean state reset & offline validation replay | Implemented (Milestone B) |
 | Validated revision store & restart replay | Implemented (Milestone B) |
-| Locator or sequence repair | Not implemented (Milestones C & D) |
-| Learned candidate ranking & business classification | Not implemented (Milestones C & D) |
+| Locator repair | Implemented (Milestone C), fixture scoped and verified by clean replay |
+| Sequence repair and business classification | Not implemented (Milestone D) |
+| Candidate ranking | Implemented for observed, approved controls (Milestone C) |
 | Cross-app evaluation and cancellation | Not implemented (Milestone E) |
 
 Public repository: https://github.com/Roojool/margin. Local verification passes.
@@ -96,7 +97,7 @@ Before a later live model test, copy `.env.example` to `.env` and add a NEW Open
 
 The proposed model is documented at [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna); verify [current pricing](https://developers.openai.com/api/docs/pricing) for the exact model, context band, and service tier. Prefer ordinary short-context requests with compact observations. Test Luna first; switch to Sol only if evaluation justifies the additional cost. Do not claim either model's quality before testing.
 
-The gateway enforces the configured project allowance, input/output limits, and at most two retries per call. It persists a reservation for every allowed attempt before calling the model, retains unresolved holds across restart, and records returned usage. Fixture discovery now enforces `MAX_BROWSER_ACTIONS` and `MAX_DISCOVERY_CALLS`; the repair limit awaits Milestone C. Unknown pricing or insufficient remaining budget blocks live calls. Local estimates do not guarantee an account-wide spending cap; other tools and delayed provider accounting can differ.
+The gateway enforces the configured project allowance, input/output limits, and at most two retries per call. It persists a reservation for every allowed attempt before calling the model, retains unresolved holds across restart, and records returned usage. Fixture discovery enforces `MAX_BROWSER_ACTIONS` and `MAX_DISCOVERY_CALLS`; locator repair makes at most two requests with retries disabled. Unknown pricing or insufficient remaining budget blocks live calls. Local estimates do not guarantee an account-wide spending cap; other tools and delayed provider accounting can differ.
 
 ## Remaining build milestones and copy-paste prompts
 
